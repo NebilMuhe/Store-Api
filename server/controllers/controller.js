@@ -9,6 +9,31 @@ const getAllProducts = async(req,res)=>{
     if(feautred) query.feautred = feautred === 'true'? true:false
     if(company) query.company = company
     if(name) query.name = {$regex:'a',$options:'i'}
+
+
+      if(numericFilters){
+        const operatorMap = {
+            ">":"$gt",
+            ">=":"$gte",
+            "<":"$lt",
+            "<=":"$lte",
+            "=":"$eq"
+        }
+        const regEx = /\b(<|>|>=|<=|=)\b/g
+        let filters = numericFilters.replace(regEx,
+            (match)=>`-${operatorMap[match]}-`)
+        const options = ["price","range"]
+
+        filters = filters.split(',').forEach((element)=>{
+            const [field,operator,value] = element.split('-')
+            if(options.includes(field)) {
+                console.log("in");
+                query[field] = {[operator]: Number(value)}
+            }
+        })
+        console.log(query)
+    }
+
     let result = Product.find(query)
 
     if(sort) {
@@ -29,16 +54,7 @@ const getAllProducts = async(req,res)=>{
 
     result = result.skip(skip).limit(limit)
 
-    if(numericFilters){
-        const operatorMap = {
-            ">":"$gt",
-            ">=":"$gte",
-            "<":"$lt",
-            "<=":"$lte",
-            "=":"$eq"
-        }
-        console.log(numericFilters)
-    }
+  
     
 
     const products = await result
